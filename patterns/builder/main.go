@@ -1,7 +1,6 @@
 package main
 
 import (
-	"L2_azat/patterns/builder/builders"
 	"fmt"
 )
 
