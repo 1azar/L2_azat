@@ -11,7 +11,7 @@ type ErrResponse struct {
 }
 
 type OkResponse struct {
-	Result string
+	Result string `json:"result"`
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) error {
@@ -20,16 +20,16 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	return json.NewEncoder(w).Encode(v)
 }
 
-func ResponseErr2(lg *slog.Logger, w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusBadGateway)
-	lg.Error(msg)
-	mb, err := json.Marshal(ErrResponse{Error: msg})
+func WrapOkResponse(w http.ResponseWriter, lg *slog.Logger) {
+	err := WriteJSON(w, http.StatusOK, "OK")
 	if err != nil {
-		lg.Error("could not marshal response to a client")
+		lg.Error("could not response to a client:", err)
 	}
-	_, err = w.Write(mb)
-	if err != nil {
-		lg.Error("could not respond to the client")
-	}
+}
 
+func WrapErrorResponse(status int, msg string, w http.ResponseWriter, lg *slog.Logger) {
+	err := WriteJSON(w, status, ErrResponse{Error: msg})
+	if err != nil {
+		lg.Error("could not response to a client:", err)
+	}
 }

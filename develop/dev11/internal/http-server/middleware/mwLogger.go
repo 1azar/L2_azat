@@ -18,12 +18,12 @@ func LoggerWrapper(next http.HandlerFunc, lg *slog.Logger) http.HandlerFunc {
 			slog.String("user_agent", r.UserAgent()),
 		)
 		t1 := time.Now()
-
+		defer func() {
+			entry.Info("request completed",
+				slog.String("duration", time.Since(t1).String()),
+			)
+		}()
 		next(w, r)
-
-		entry.Info("request completed",
-			slog.String("duration", time.Since(t1).String()),
-		)
 	}
 
 	return fn

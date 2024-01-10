@@ -29,7 +29,7 @@ func main() {
 
 	myLogger.Info("Initializing server.")
 	myLogger.Debug("debug messages are enabled")
-	myLogger.Debug("Config:", cfg) //todo remove this line
+	myLogger.Debug("Config:", cfg) //todo remove this later
 
 	// storage
 	storage, err := sqlite.New(cfg.StoragePath)
@@ -38,15 +38,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// http-server server
+	// router
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/create_event", middleware.LoggerWrapper(createEvent.New(myLogger, storage), myLogger))
-	mux.HandleFunc("/update_event", middleware.LoggerWrapper(updateEvent.New(myLogger, storage), myLogger))
-	mux.HandleFunc("/delete_event", middleware.LoggerWrapper(deleteEvent.New(myLogger, storage), myLogger))
-	mux.HandleFunc("/events_for_day", middleware.LoggerWrapper(eventForDay.New(myLogger, storage), myLogger))
-	mux.HandleFunc("/events_for_week", middleware.LoggerWrapper(eventForWeek.New(myLogger, storage), myLogger))
-	mux.HandleFunc("/events_for_month", middleware.LoggerWrapper(eventForMonth.New(myLogger, storage), myLogger))
+	wrapHandlerFunc := func(handlerF http.HandlerFunc) http.HandlerFunc {
+		return middleware.LoggerWrapper(handlerF, myLogger)
+	}
+
+	mux.HandleFunc("/create_event", wrapHandlerFunc(createEvent.New(myLogger, storage)))
+	mux.HandleFunc("/update_event", wrapHandlerFunc(updateEvent.New(myLogger, storage)))
+	mux.HandleFunc("/delete_event", wrapHandlerFunc(deleteEvent.New(myLogger, storage)))
+	mux.HandleFunc("/events_for_day", wrapHandlerFunc(eventForDay.New(myLogger, storage)))
+	mux.HandleFunc("/events_for_week", wrapHandlerFunc(eventForWeek.New(myLogger, storage)))
+	mux.HandleFunc("/events_for_month", wrapHandlerFunc(eventForMonth.New(myLogger, storage)))
 
 	srv := &http.Server{
 		Addr:         cfg.Host + ":" + cfg.Port,
